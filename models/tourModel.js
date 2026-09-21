@@ -4,6 +4,11 @@ const Schema = mongoose.Schema;
 
 const tourSchema = new Schema(
   {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     name: {
       type: String,
       required: true,
