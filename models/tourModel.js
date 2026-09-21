@@ -4,11 +4,6 @@ const Schema = mongoose.Schema;
 
 const tourSchema = new Schema(
   {
-    user: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
     name: {
       type: String,
       required: true,
@@ -25,7 +20,7 @@ const tourSchema = new Schema(
       type: String,
       required: true,
     },
-    
+
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,

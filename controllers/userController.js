@@ -1,5 +1,6 @@
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
+const validator = require("validator");
 
 // Generate JWT
 const generateToken = (_id) => {
@@ -12,10 +13,36 @@ const generateToken = (_id) => {
 // @route   POST /api/users/signup
 // @access  Public
 const signupUser = async (req, res) => {
-  const { name, email, password, phone_number, gender, date_of_birth, membership_status } = req.body;
+  const {
+    name,
+    email,
+    password,
+    phone_number,
+    gender,
+    date_of_birth,
+    membership_status,
+  } = req.body;
+
+  // Validate email
+  if (!validator.isEmail(email)) {
+    return res.status(400).json({ error: "Invalid email format" });
+  }
+
+  // Validate password
+  if (!validator.isStrongPassword(password)) {
+    return res.status(400).json({ error: "Password is too weak" });
+  }
 
   try {
-    const user = await User.signup(name, email, password, phone_number, gender, date_of_birth, membership_status);
+    const user = await User.signup(
+      name,
+      email,
+      password,
+      phone_number,
+      gender,
+      date_of_birth,
+      membership_status
+    );
 
     // create a token
     const token = generateToken(user._id);
@@ -40,12 +67,14 @@ const signupUser = async (req, res) => {
 // @access  Public
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
+
   try {
     const user = await User.login(email, password);
 
     if (user) {
       // create a token
       const token = generateToken(user._id);
+
       res.status(200).json({
         _id: user._id,
         name: user.name,
