@@ -1,56 +1,89 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const validator = require("validator");
 
-const userSchema = mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: [true, "Please add a name"],
-    },
-    email: {
-      type: String,
-      required: [true, "Please add an email"],
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: [true, "Please add a password"],
-    },
+const Schema = mongoose.Schema;
+
+const userSchema = new Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  phone_number: {
+    type: String,
+    required: true,
+    match: /^\d{10,}$/
   },
-  {
-    timestamps: true,
+  gender: {
+    type: String,
+    required: true,
+    enum: ["Male", "Female", "Other"]
+  },
+  date_of_birth: { type: Date, required: true },
+  membership_status: {
+    type: String,
+    required: true,
+    enum: ["Active", "Inactive", "Suspended"]
   }
-);
-
-
+});
 
 // static signup method
-userSchema.statics.signup = async function (name, email, password) {
-  // validation
-  if ((!name, !email || !password)) {
-    throw Error("Please add all fields");
+userSchema.statics.signup = async function (
+  name,
+  email,
+  password,
+  phone_number,
+  gender,
+  date_of_birth,
+  membership_status
+) {
+  if (
+    !name ||
+    !email ||
+    !password ||
+    !phone_number ||
+    !gender ||
+    !date_of_birth ||
+    !membership_status
+  ) {
+    throw Error("All fields must be filled");
   }
+
   if (!validator.isEmail(email)) {
     throw Error("Email not valid");
   }
+
   if (!validator.isStrongPassword(password)) {
     throw Error("Password not strong enough");
   }
 
-  const userExists = await this.findOne({ email });
+  if (!/^\d{10,}$/.test(phone_number)) {
+    throw Error("Phone number must be numeric and at least 10 digits");
+  }
 
-  if (userExists) {
-    throw new Error("User already exists");
+  if (!["Male", "Female", "Other"].includes(gender)) {
+    throw Error("Gender must be Male, Female or Other");
+  }
+
+  if (!["Active", "Inactive", "Suspended"].includes(membership_status)) {
+    throw Error("Membership status must be Active, Inactive or Suspended");
+  }
+
+  const exists = await this.findOne({ email });
+  if (exists) {
+    throw Error("Email already in use");
   }
 
   const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+  const hash = await bcrypt.hash(password, salt);
 
   const user = await this.create({
     name,
     email,
-    password: hashedPassword,
+    password: hash,
+    phone_number,
+    gender,
+    date_of_birth,
+    membership_status
   });
 
   return user;
@@ -76,4 +109,3 @@ userSchema.statics.login = async function (email, password) {
 };
 
 module.exports = mongoose.model("User", userSchema);
-
